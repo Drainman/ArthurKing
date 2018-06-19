@@ -1,43 +1,75 @@
 # Arthur King Simulation (A C project)
-# */Develop by Hagbuck & Drainman*
+# *Develop by Hagbuck & Drainman*
 
 # Algorythm
 
 ## Process
-Processus Père : TheKing
-11 Processus fils pour chaque chevalier
-N Processus fils pour les paysans (N valeur aléatoire ou donné en paramètre)
+TheKing : Process boucle infini.
+11 Threads représenatant les chevaliers.
+N Threads représenatant les paysans. (N valeurs aléatoires ou donner en paramètre)
 
 ## Actions descriptions
 
 ### TheKing
-If chevaliers non dispo && nb_paysans == 3 --> rend_jugement() --> = kill process paysans ?
-Else If chevaliers non dispo && nb_paysans > 3 --> paysans convié au prochain jugement (file d'attente)
-Else If chevaliers non dispo && nb_paysans < 3 --> Wait 3 paysans
-Else appelMerlin()
+Boucle infini (while 1).
+* If(nb_chevaliersDispo == 11) --> appelMerlin()
+* Else if(nb_paysans_en_attente_de_jugement == 3 ) --> rend_jugement() --> = kill process paysans.
+* Else --> CONTINUE
 
 ### Chevaliers
-Timer random pendant lequel il font leur quete --> MainProcess
+Boucle infi (while 1).
+*  If(nb_chevaliersDispo == 11) --> chercheGraal()
+*  Else (en_quete) --> Timer random pendant lequel il font leur quete --> MainProcess
 A la fin du timer se rend disponible pour le roi --> rendreCompte()
-Si tout les chevaliers sont dispo et que le roi l'ordonne --> chercheGraal()
 
 ### Paysans
 Timer random pour attendre qu'il se présente à la cours
-Si quand se rend à la cours, il y a déja 3 paysans --> Fil d'attente
+* Si quand se rend à la cours, il y a déja 3 paysans --> bloqué par accés ressources.
+
+## Variables protégées
+
+### nb_chevaliersDispo
+Description : Représente le nombre de chevalier disponible pour partir en quete.
+* Contrainte : <= 11
+* A chaque appel de rendreCompte() ++
+* A l'appel de appelMerlin() = 0
+
+### nb_paysansEnJugement
+Description : Représente le nombre de paysans pret à etre juger.
+* Contrainte : <= 3
+* A chaque fin de timer des paysans et < 3 --> ++
+* Reset à l'appel de rend_jugement() --> =0
+
+### timerGraal
+Desription : Le temps pendant lequel le roi et ses 11 chevlaiers partent. (random)
 
 ## Fonction
 
 ### rend_jugement() (TheKing)
---> Kill process paysans + 'And my jugement is .... [actionRandom] ! Justice done for [PID] '
+* Appelé quand nb_paysansEnJugement==3 & si roi présent
+* Kill process des 3 paysans
+* PRINT : 'And my jugement is .... [actionRandom] ! Justice done for [PID] '
+* RESET $nb_paysansEnJugement
 
 ### appelMerlin() (TheKing)
---> 'Merlin, please. Help Me.' + timer commun au chevalier
+* Appelé par le Roi quand nb_chevaliersDispo == 11
+* PRINT : 'Merlin, please. Help Me.'
+* RESET $nb_chevaliersDispo
+* timer commun aux chevaliers
 
 ### chercheGraal() (Chevaliers)
---> 'But.. Where is this fuc**** book ! ' + timer commun avec le roi
+* Appelé par les chevaliers quand nb_chevaliersDispo == 11
+* PRINT : 'But.. Where is this fuc**** book ! ' + timer commun avec le roi
+* A la fin de cette fonction le chevalier doit repartir en quete. (semaphore de son etat MAJ par le roi et visible dans le boucle infini)
 
 ### rendreComptee() (Chevaliers)
---> 'My king I've complete my quest, I'm Waiting for you now' + timer random perso avant
+* Appelé par les chevaliers quand leur timer de quete est fini.
+* PRINT : 'My king I've complete my quest.'
+* INCREMENT : $nb_chevaliersDispo
 
 ### mainProcess des paysans
---> Timer random avant de se rendre à la cours
+* Timer random avant de se rendre à la cours
+* PRINT (arrive à la cours) : "I have a request !"
+* INCREMENT : $nb_paysansEnJugement
+* WAIT : JUGEMENT
+* WHEN JUGER -> PRINT : "King juge me !"

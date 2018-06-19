@@ -32,9 +32,7 @@ int main(int argc,char ** argv)
   //Paramater requierements
   printf("[PARAM PAYSANS] - %s\n",argv[1]);
   int nb_paysans = atoi(argv[1]);
-  //pid_t
-  pid_t processPaysans [nb_paysans];
-  pid_t processChevaliers [11];
+
   //semaphores
   sem_init(&semChevaliersDispo, 0, 1);
   sem_init(&semPaysansEnJugement, 0,1);
@@ -42,37 +40,6 @@ int main(int argc,char ** argv)
 
   /******** CODE ********/
   printf("[INFO] - Lancement du programme.\n");
-
-  //Gestion PID
-  for(int i=0;i<11;i++)
-  {
-    if(processChevaliers[i] == 0)
-      chevalier();
-    else
-    {
-      printf("[INFO] - Processus père -> PID = %d\n",(int) getpid());
-      for(int i=0;i<11;i++){processChevaliers[i] = fork();}
-      for(int i=0;i<11;i++){waitpid(processChevaliers[i],&status,0);}
-      printf("\n[INFO] - Fin du processus pere.\n");
-    }
-  }
-
-/* else
-  //{
-    printf("[INFO] - Processus père -> PID = %d\n",(int) getpid());
-    for(int i=0;i<11;i++)
-    {
-      processChevaliers[i] = fork();
-    }
-
-    waitpid(pid1,&status,0);
-    waitpid(pid2,&status,0);
-    waitpid(pid3,&status,0);
-
-
-    printf("\n[INFO] - Fin du processus pere.\n");
-  //}*/
-
 
   return 0;
 
@@ -98,7 +65,7 @@ void chevalier()
 void rendreCompte()
 {
   sleep( rand() % 10);
-  printf("[INFO] - [CHEVALIER %d] - My king I've complete my quest, I'm Waiting for you now.\n",(int) getpid() );
+  printf("[INFO] - [CHEVALIER %d] - My king I've complete my quest.\n",(int) getpid() );
   sem_wait(&semChevaliersDispo);
   nb_chevaliersDispo++;
   sem_post(&semChevaliersDispo);
