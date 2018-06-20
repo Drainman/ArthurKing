@@ -1,31 +1,17 @@
 /******************************************************************************/
-/***************************** ArthurKing.C ************************************/
+/******************************** arthurKing.c ********************************/
+/*                                                                            */
+/*            Auteur : Corentin TROADEC - Anthony Vuillemin                   */
+/*                              DATE : Juin 2018                              */
 /******************************************************************************/
 
+
 /********** LIB **********/
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <string.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <time.h>
-
-#define NB_PAYSANS 15
-
-/******** FUNCTIONS *******/
-void chevalier(void * ptr);
-void paysans(void * ptr);
-void rendreCompte(void * ptr);
-void king(void * ptr);
-void invoqueMerlin();
-void jugement();
+#include "arthurKing.h"
 
 
 /********** CONST *********/
-sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal;
+sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal,semJugement;
 int nb_chevaliersDispo,nb_paysansEnJugement,timerGraal = 0;
 int status;
 
@@ -37,24 +23,22 @@ int main(int argc,char ** argv)
   //Paramater requierements
   printf("[PARAM PAYSANS] - %d\n",NB_PAYSANS);
   int nb_paysans = NB_PAYSANS;
-  /*
-  //PAYSANS EN PARAM ?
-  printf("[PARAM PAYSANS] - %s\n",argv[1]);
-  int nb_paysans = atoi(argv[1]);
-  */
-  //pthread
-  pthread_t pking;
 
-  pthread_t pChevalier[11];
+  //pthread
+  pthread_t pking; //King
+
+  pthread_t pChevalier[11]; //KNIGHTS
   int id_chevalier[11] = {0,1,2,3,4,5,6,7,8,9,10};
 
-  pthread_t pPaysans[NB_PAYSANS];
-  int id_paysans[NB_PAYSANS] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}; //a remplir dynamniquement comme au dessus
+  pthread_t pPaysans[NB_PAYSANS]; //Farmers
+  int id_paysans[NB_PAYSANS] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+  // --> a remplir dynamniquement comme au dessus
 
   //semaphores
-  sem_init(&semChevaliersDispo, 0, 1);
-  sem_init(&semPaysansEnJugement, 0,1);
+  sem_init(&semChevaliersDispo, 0, 14); //11 chevalier + Roi + marge
+  sem_init(&semPaysansEnJugement, 0,3); //3 paysans en meme temps
   sem_init(&semTimerGraal, 0, 1);
+  sem_init(&semJugement,0,3);
 
   /******** CODE ********/
   printf("[INFO] - Lancement du programme.\n");
@@ -89,7 +73,7 @@ int main(int argc,char ** argv)
 */
 void chevalier(void *ptr)
 {
-    sleep( rand() % 10);
+    sleep( rand() % MAX_TIMER_KNIGHTS);
     rendreCompte(ptr);
 }
 
@@ -108,19 +92,22 @@ void paysans(void *ptr)
 {
   int x;
   x = *((int *) ptr);
-  sleep( rand() % 60);
-  printf("[INFO] - [PAYSANS %d] - Se rend à la cours.\n",x );
+  sleep( rand() % MAX_TIMER_FARMER);
+  printf("[PAYSANS %d] - Se rend à la cours.\n",x );
   sem_wait(&semPaysansEnJugement);
   nb_paysansEnJugement++;
   printf("[INFO] - Waiting farmers for the King : %d\n", nb_paysansEnJugement);
+  //TENTE D ACCEDER AU SEM DU ROI JUGEMENT
   sem_post(&semPaysansEnJugement);
 }
 
 void king(void * ptr)
 {
+
   while(1)
   {
     //Test si tout les chevaliers sont dispos
+    sleep(2);
     sem_wait(&semChevaliersDispo);
     if(nb_chevaliersDispo == 11)
     {
@@ -130,10 +117,14 @@ void king(void * ptr)
 
     else
     {
-      sem_wait(&semPaysansEnJugement);
-      if(nb_paysansEnJugement == 3)
+      //sem_wait(&semPaysansEnJugement);
+      int placePaysans;
+      sem_getvalue(&semPaysansEnJugement,&placePaysans);
+
+      printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
+      if(placePaysans <= 0)
       {
-        sem_post(&semPaysansEnJugement);
+        //sem_post(&semPaysansEnJugement);
         jugement();
       }
 
