@@ -53,13 +53,12 @@ int main(int argc,char ** argv)
      pthread_create (&pChevalier[i], NULL, (void *) &chevalier, (void *) &id_chevalier[i]);
   }
 
-  //PTHREAD FARMER
-  /*
+  //PTHREAD FARMERS
   for(int i=0;i<nb_paysans;i++)
   {
     pthread_create (&pPaysans[i], NULL, (void *) &paysans, (void *) &id_paysans[i]);
   }
-  */
+
 
   //SYNCHRO KNIGHTS & FARMERS
   for(int i=0;i<11;i++){pthread_join(pChevalier[i], NULL);}
@@ -118,9 +117,9 @@ void paysans(void *ptr)
 
   //SEMAPHORE
   sem_wait(&semPaysansEnJugement); //y a de la place
-  nb_paysansEnJugement++; //TODO getvalue
-
-  printf("[INFO] - Waiting farmers for the King : %d\n", nb_paysansEnJugement);
+  int placePaysans;
+  sem_getvalue(&semPaysansEnJugement,&placePaysans);
+  printf("[INFO/FARMERS] - Waiting farmers for the King : %d\n", placePaysans);
 
   //deuxième porte
   sem_wait(&semJugement);
@@ -128,10 +127,7 @@ void paysans(void *ptr)
 
   while(juge == 0)
   {
-    //ATTEND ORDRE ROI AVANT DE SORTIR BOUCLE INFI
-    int placePaysans;
-    sem_getvalue(&semPaysansEnJugement,&placePaysans);
-
+      sem_getvalue(&semPaysansEnJugement,&placePaysans);
       if(placePaysans <= 0)
       {
         printf("[PAYSANS %d] - Jugé.\n",x);
@@ -140,7 +136,7 @@ void paysans(void *ptr)
 
   }
 
-  //TENTE D ACCEDER AU SEM DU ROI JUGEMENT : ORDRE TODO
+  while(tag = 'J')
   sem_post(&semPaysansEnJugement);
   sem_post(&semJugement);
 }
@@ -168,6 +164,7 @@ void king(void * ptr)
       sem_post(&semTag);
       invoqueMerlin();
       printf("[KING] - I'm back to my kingdom !\n");
+      tag = ' ';
     }
 
     else
@@ -176,17 +173,14 @@ void king(void * ptr)
       int placePaysans;
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
 
-      //printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
-
-      if(placePaysans == 0)
+      printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
+      if(placePaysans <= 0)
       {
         jugement();
       }
 
     }
 
-    //sem_post(&semPaysansEnJugement);
-    //sem_post(&semChevaliersDispo);
   }
 }
 
@@ -198,8 +192,8 @@ void invoqueMerlin()
 
 void jugement()
 {
-  sem_wait(&semPaysansEnJugement);
-  nb_paysansEnJugement = 0;
-  sem_post(&semPaysansEnJugement);
+  sem_wait(&semTag);
+  //tag = 'J';
+  sem_post(&semTag);
   printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 }
