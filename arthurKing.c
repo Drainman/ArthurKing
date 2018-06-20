@@ -40,12 +40,12 @@ int main(int argc,char ** argv)
   sem_init(&semPaysansEnJugement, 0,3); //Porte chateau
   sem_init(&semJugement,0,3); //Attente dans la salle de réception
   sem_init(&semTimerGraal, 0, 1);
-
+  sem_init(&semTag,0,12); // 11 chevalier + le roi
 
   /******** CODE ********/
   printf("[INFO] - Lancement du programme.\n");
 
-  pthread_create (&pking, NULL, (void *) &king, (void *) &id_chevalier[0]); //TODO
+  pthread_create (&pking, NULL, (void *) &king, NULL);
 
   //PTHREAD KNIGHTS
   for(int i=0;i<11;i++)
@@ -54,10 +54,12 @@ int main(int argc,char ** argv)
   }
 
   //PTHREAD FARMER
+  /*
   for(int i=0;i<nb_paysans;i++)
   {
     pthread_create (&pPaysans[i], NULL, (void *) &paysans, (void *) &id_paysans[i]);
   }
+  */
 
   //SYNCHRO KNIGHTS & FARMERS
   for(int i=0;i<11;i++){pthread_join(pChevalier[i], NULL);}
@@ -67,15 +69,31 @@ int main(int argc,char ** argv)
   return 0;
 }
 
-/**
-* Processus Fils Chevalier
-* 1) -> Lance un processus fils rendreCompte()
-* 2) -> Attends la fin de ce processus et lance chercherGraal()
-*/
+
 void chevalier(void *ptr)
 {
+    //ID
+    int x;
+    x = *((int *) ptr);
+
+    //TIMER
     sleep( rand() % MAX_TIMER_KNIGHTS);
+
+    //EVENT
+    sem_wait(&semChevaliersDispo);
     rendreCompte(ptr);
+
+    //WAIT FOR KING
+    while(tag != 'G'){}
+
+    //AFTER WAIT
+    printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
+
+    //FREE SEM
+    sleep( timerGraal);
+    sem_post(&semChevaliersDispo);
+    printf("[CHEVALIER %d] - Come back for my quest.\n",x);
+
 }
 
 void rendreCompte(void *ptr)
@@ -83,14 +101,7 @@ void rendreCompte(void *ptr)
   int x;
   x = *((int *) ptr);
   printf("[CHEVALIER %d] - My king I've complete my quest.\n",x );
-
-  sem_wait(&semChevaliersDispo);
-  nb_chevaliersDispo++;
-
   //printf("[INFO] - Knigths ready for Graal : %d\n", nb_chevaliersDispo);
-
-  //TODO - Il attend l'ordre du roi avant de partir en quete 'Deplacement dans chevalier'
-  // -> sem_post(&semChevaliersDispo);
 }
 
 //TODO fonction grall
@@ -145,49 +156,44 @@ void king(void * ptr)
     //NB CHEVALIER
     int placeChevalier;
     sem_getvalue(&semChevaliersDispo,&placeChevalier);
-    printf("[WARNING] - PLACE SEM CHEVALIER -> %d \n",placeChevalier);
+    printf("[INFO/KING] - WAITING KNIGHTS -> %d \n",placeChevalier);
 
     if(placeChevalier <= 0)
     {
-      //DEFINIISSION TIMER COMMUN : TODO
-      invoqueMerlin();
+      sem_wait(&semTimerGraal);
+      timerGraal =    rand() % 25  ;
+      sem_post(&semTimerGraal);
       sem_wait(&semTag);
       tag = 'G';
       sem_post(&semTag);
-
+      invoqueMerlin();
+      printf("[KING] - I'm back to my kingdom !\n");
     }
 
     else
     {
-      //sem_wait(&semPaysansEnJugement);
       //nb paysans dispo
       int placePaysans;
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
 
-      printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
+      //printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
 
       if(placePaysans == 0)
       {
-        //sem_post(&semPaysansEnJugement);
         jugement();
       }
 
     }
 
-    sem_post(&semPaysansEnJugement);
-    sem_post(&semChevaliersDispo);
+    //sem_post(&semPaysansEnJugement);
+    //sem_post(&semChevaliersDispo);
   }
 }
 
 void invoqueMerlin()
 {
-  sem_wait(&semTimerGraal);
-  timerGraal =   sleep( rand() % 60);
-  sem_post(&semTimerGraal);
-  printf("[INFO] - Merlin ! I need some help !\n");
-  //sem timer
-
-  printf("[INFO] - Knights RESET : %d\n", nb_chevaliersDispo);
+  printf("[MERLIN] - Merlin ! I need some help !\n");
+  sleep( timerGraal);
 }
 
 void jugement()
@@ -195,5 +201,5 @@ void jugement()
   sem_wait(&semPaysansEnJugement);
   nb_paysansEnJugement = 0;
   sem_post(&semPaysansEnJugement);
-  printf("[INFO] - AND THIS IS MY JUGEMENT !!!\n");
+  printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 }
