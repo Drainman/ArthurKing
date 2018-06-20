@@ -97,8 +97,21 @@ void paysans(void *ptr)
   sem_wait(&semPaysansEnJugement);
   nb_paysansEnJugement++;
   printf("[INFO] - Waiting farmers for the King : %d\n", nb_paysansEnJugement);
+  sem_wait(&semJugement);
+  int juge = 0;
+  while(juge == 0)
+  {
+      if(nb_paysansEnJugement == 3)
+      {
+        printf("[PAYSANS %d] - Jugé.\n",x);
+        juge = 1;
+      }
+
+  }
+
   //TENTE D ACCEDER AU SEM DU ROI JUGEMENT
   sem_post(&semPaysansEnJugement);
+  sem_post(&semJugement);
 }
 
 void king(void * ptr)
