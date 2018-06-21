@@ -19,9 +19,9 @@
 #include <time.h>
 
 /******* DEFINE ******/
-#define NB_PAYSANS 15
+#define NB_PAYSANS 25
 #define MAX_TIMER_KNIGHTS 10
-#define MAX_TIMER_FARMER 40
+#define MAX_TIMER_FARMER 10
 
 
 /******* PROTOTYPES ******/

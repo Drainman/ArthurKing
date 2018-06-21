@@ -12,33 +12,34 @@
 
 /********** CONST *********/
 sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal,semJugement,semTag;
-int nb_chevaliersDispo,nb_paysansEnJugement,timerGraal,roiJuge = 0;
+int nb_chevaliersDispo ,nb_paysansEnJugement =0,timerGraal,roiJuge = 0;
 char tag;
 int status;
-
+pthread_mutex_t semJugement2;
 
 /********** MAIN *********/
 int main(int argc,char ** argv)
 {
-  /******** VARIABLE ********/
-  //Paramater requierements
+  /******** VARIABLES ********/
   printf("[PARAM PAYSANS] - %d\n",NB_PAYSANS);
   int nb_paysans = NB_PAYSANS;
 
-  //pthread
-  pthread_t pking; //King
+  /******** THREADS *********/
+  //KING
+  pthread_t pking;
 
-  pthread_t pChevalier[11]; //KNIGHTS
-  int id_chevalier[11]/* = {0,1,2,3,4,5,6,7,8,9,10}*/;
+  //KNIGHTS
+  pthread_t pChevalier[11];
+  int id_chevalier[11];
 
-  pthread_t pPaysans[NB_PAYSANS]; //Farmers
-  int id_paysans[NB_PAYSANS]/* = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}*/;
-  // TODO (FONCTION REMPLISSAGE TABLEAU DYNAMIQUE)
+  //FARMERS
+  pthread_t pPaysans[NB_PAYSANS];
+  int id_paysans[NB_PAYSANS];
 
-  //semaphores
+  /******** SEMAPHORES *********/
   sem_init(&semChevaliersDispo, 0, 11); //11 chevaliers
   sem_init(&semPaysansEnJugement, 0,3); //Porte chateau
-  sem_init(&semJugement,0,3); //Attente dans la salle de réception
+  sem_init(&semJugement,0,1); //Attente dans la salle de réception
   sem_init(&semTimerGraal, 0, 1);
   sem_init(&semTag,0,12); // 11 chevalier + le roi
 
@@ -48,11 +49,13 @@ int main(int argc,char ** argv)
   pthread_create (&pking, NULL, (void *) &king, NULL);
 
   //PTHREAD KNIGHTS
+  /*
   for(int i=0;i<11;i++)
   {
      id_chevalier[i] = i;
      pthread_create (&pChevalier[i], NULL, (void *) &chevalier, (void *) &id_chevalier[i]);
   }
+  */
 
   //PTHREAD FARMERS
   for(int i=0;i<nb_paysans;i++)
@@ -61,8 +64,8 @@ int main(int argc,char ** argv)
     pthread_create (&pPaysans[i], NULL, (void *) &paysans, (void *) &id_paysans[i]);
   }
 
-
   //SYNCHRO KNIGHTS & FARMERS
+  pthread_join(pking, NULL);
   for(int i=0;i<11;i++){pthread_join(pChevalier[i], NULL);}
   for(int i=0;i<11;i++){pthread_join(pPaysans[i], NULL);}
 
@@ -118,36 +121,28 @@ void paysans(void *ptr)
   x = *((int *) ptr);
 
   //TIMER
-  sleep( rand() % MAX_TIMER_FARMER);
+  sleep( rand() % MAX_TIMER_FARMER) + 1;
   printf("[PAYSANS %d] - Se rend à la cours.\n",x );
 
   //SEMAPHORE
   sem_wait(&semPaysansEnJugement); //y a de la place
-  int placePaysans;
-  sem_getvalue(&semPaysansEnJugement,&placePaysans);
-  printf("[INFO/FARMERS] - Waiting farmers for the King : %d\n", placePaysans);
 
-  //deuxième porte
-  sem_wait(&semJugement);
-  int juge = 0;
+  //Attend que le roi ouvre la porte
+  pthread_mutex_lock(&semJugement2);
 
-  while(juge == 0)
-  {
-      sem_getvalue(&semPaysansEnJugement,&placePaysans);
-      //+ AUTORISATION DU ROI : TODO (while tag != 'J')
-      if(placePaysans <= 0)
-      {
-        printf("[PAYSANS %d] - Jugé.\n",x);
-        juge = 1;
-      }
+  printf("[PAYSANS %d] - Jugé.\n",x);
 
-  }
+  pthread_mutex_unlock(&semJugement2);
+
+  //Laisse la place à un autre paysant
   sem_post(&semPaysansEnJugement);
-  sem_post(&semJugement);
 }
 
 void king(void * ptr)
 {
+  //Bloque l'accés au palais
+  printf("[KING] - I'm alive ! \n");
+  pthread_mutex_lock(&semJugement2);
 
   while(1)
   {
@@ -180,7 +175,10 @@ void king(void * ptr)
 
       printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
       //3 FARMERS HERE
-      if(placePaysans <= 0){jugement();}
+      if(placePaysans <= 0 && nb_paysansEnJugement == 3)
+      {
+        jugement();
+      }
 
     }
 
@@ -190,13 +188,15 @@ void king(void * ptr)
 void invoqueMerlin()
 {
   printf("[MERLIN] - Merlin ! I need some help !\n");
+  //Attendre la fin du timer protégé en commun avec les chevaliers
   sleep( timerGraal);
 }
 
 void jugement()
 {
-  sem_wait(&semTag);
-  //tag = 'J';
-  sem_post(&semTag);
   printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
+
+  pthread_mutex_unlock(&semJugement2);
+  usleep(400);
+  pthread_mutex_lock(&semJugement2);
 }
