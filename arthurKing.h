@@ -29,5 +29,6 @@ void chevalier(void * ptr);
 void paysans(void * ptr);
 void rendreCompte(void * ptr);
 void king(void * ptr);
+void chercherGraal(void * ptr);
 void invoqueMerlin();
 void jugement();

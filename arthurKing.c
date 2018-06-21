@@ -12,7 +12,7 @@
 
 /********** CONST *********/
 sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal,semJugement,semTag;
-int nb_chevaliersDispo,nb_paysansEnJugement,timerGraal = 0,roiJuge = 0;
+int nb_chevaliersDispo,nb_paysansEnJugement,timerGraal,roiJuge = 0;
 char tag;
 int status;
 
@@ -87,14 +87,21 @@ void chevalier(void *ptr)
     //WAIT FOR KING
     while(tag != 'G'){}
 
-    //AFTER WAIT
-    printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
-
-    //FREE SEM
-    sleep( timerGraal);
+    chercherGraal(ptr);
     sem_post(&semChevaliersDispo);
     printf("[CHEVALIER %d] - Come back for my quest.\n",x);
+}
 
+void chercherGraal(void * ptr)
+{
+  //ID
+  int x;
+  x = *((int *) ptr);
+
+  //AFTER WAIT
+  printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
+  //Wait timer
+  sleep( timerGraal);
 }
 
 void rendreCompte(void *ptr)
@@ -102,10 +109,7 @@ void rendreCompte(void *ptr)
   int x;
   x = *((int *) ptr);
   printf("[CHEVALIER %d] - My king I've complete my quest.\n",x );
-  //printf("[INFO] - Knigths ready for Graal : %d\n", nb_chevaliersDispo);
 }
-
-//TODO fonction grall
 
 void paysans(void *ptr)
 {
@@ -130,6 +134,7 @@ void paysans(void *ptr)
   while(juge == 0)
   {
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
+      //+ AUTORISATION DU ROI : TODO (while tag != 'J')
       if(placePaysans <= 0)
       {
         printf("[PAYSANS %d] - Jugé.\n",x);
@@ -137,8 +142,6 @@ void paysans(void *ptr)
       }
 
   }
-
-  while(tag = 'J')
   sem_post(&semPaysansEnJugement);
   sem_post(&semJugement);
 }
@@ -148,10 +151,10 @@ void king(void * ptr)
 
   while(1)
   {
-    //Test si tout les chevaliers sont dispos
+    //Get rest
     sleep(2);
 
-    //NB CHEVALIER
+    //Test si tout les chevaliers sont dispos
     int placeChevalier;
     sem_getvalue(&semChevaliersDispo,&placeChevalier);
     printf("[INFO/KING] - WAITING KNIGHTS -> %d \n",placeChevalier);
@@ -176,10 +179,8 @@ void king(void * ptr)
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
 
       printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
-      if(placePaysans <= 0)
-      {
-        jugement();
-      }
+      //3 FARMERS HERE
+      if(placePaysans <= 0){jugement();}
 
     }
 
