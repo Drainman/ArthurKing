@@ -29,10 +29,10 @@ int main(int argc,char ** argv)
   pthread_t pking; //King
 
   pthread_t pChevalier[11]; //KNIGHTS
-  int id_chevalier[11] = {0,1,2,3,4,5,6,7,8,9,10};
+  int id_chevalier[11]/* = {0,1,2,3,4,5,6,7,8,9,10}*/;
 
   pthread_t pPaysans[NB_PAYSANS]; //Farmers
-  int id_paysans[NB_PAYSANS] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+  int id_paysans[NB_PAYSANS]/* = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}*/;
   // TODO (FONCTION REMPLISSAGE TABLEAU DYNAMIQUE)
 
   //semaphores
@@ -50,12 +50,14 @@ int main(int argc,char ** argv)
   //PTHREAD KNIGHTS
   for(int i=0;i<11;i++)
   {
+     id_chevalier[i] = i;
      pthread_create (&pChevalier[i], NULL, (void *) &chevalier, (void *) &id_chevalier[i]);
   }
 
   //PTHREAD FARMERS
   for(int i=0;i<nb_paysans;i++)
   {
+    id_paysans[i] = i;
     pthread_create (&pPaysans[i], NULL, (void *) &paysans, (void *) &id_paysans[i]);
   }
 
