@@ -50,7 +50,121 @@ Une seul itération :
 * Place : 1
 * Consomateur : Le Roi et les Paysans.
 
-## Fonctions par acteurs.
+### Thread
+
+### Le Roi
+```C
+void king(void * ptr)
+{
+  printf("[KING] - Welcome in my Kingdom. \n");
+
+  //Prend la ressource d'accès à la salle de jugement (1 place)
+  sem_wait(&semJugement);
+
+  while(1)
+  {
+    //Prend du repos
+    sleep(2);
+
+    //Regarde la disponibilité des chevaliers
+    int placeChevalier;
+    sem_getvalue(&semChevaliersDispo,&placeChevalier);
+    printf("[INFO/KING] - WAITING KNIGHTS -> %d \n",placeChevalier);
+
+    //Tout les chevaliers sont disponibles
+    if(placeChevalier <= 0)
+    {
+      //Défini un timer commun pour lui et le chevalier (= temps de recherche du Graal)
+      timerGraal =    rand() % 25  ;
+
+      //Ordonne au chevalier de partir
+      tag = 'G';
+
+      //Invoque Merlin
+      invoqueMerlin();
+
+      //Retour au royaume
+      printf("[KING] - I'm back to my kingdom !\n");
+
+      //Ne donne plus d'ordre
+      tag = ' ';
+    }
+
+    //Chevaliers indisponibles
+    else
+    {
+      //Récupère le nombre de paysans en attente d'etre juge
+      int placePaysans;
+      sem_getvalue(&semPaysansEnJugement,&placePaysans);
+      printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
+
+      //Si 3 paysans attendent
+      if(placePaysans <= 0 ){jugement();}
+
+    }
+
+    //Reboucle
+  }
+
+  //Fin Thread King
+  pthread_exit(0);
+}
+```
+
+### Les Chevaliers
+```C
+void chevalier(void *ptr)
+{
+    while(1)
+    {
+      //TIMER
+      sleep( rand() % MAX_TIMER_KNIGHTS);
+
+      //EVENT
+      rendreCompte(ptr);
+
+      //WAIT FOR KING
+      while(tag != 'G'){}
+
+      //Cherche le Graal
+      chercherGraal(ptr);
+
+      //Libère le sémaphore --> Se rend indisponible et repart en quete
+      sem_post(&semChevaliersDispo);
+      printf("[CHEVALIER %d] - Come back for my quest.\n",x);
+      //while --> Reparte en quete
+    }
+
+    //Fin Thread King
+    pthread_exit(0);
+}
+```
+
+### Les Paysans
+```C
+void paysans(void *ptr)
+{
+  //N'a pas de reqete à faire au roi avant la fin du timer
+  sleep( rand() % MAX_TIMER_FARMER) + 1;
+  printf("[PAYSANS %d] - Se rend à la cours.\n",x );
+
+  //Demande à voir le roi -> Attends de pouvoir rentrer dans le palais
+  sem_wait(&semPaysansEnJugement);
+
+  //Est dans le palais et attends dans la salle d'attente
+  printf("[PAYSANS %d] - Attends dans la salle.\n",x );
+
+  //Attend que le roi l'accueil et le juge
+  sem_wait(&semJugement);
+  printf("[PAYSANS %d] - Jugé.\n",x);
+  sem_post(&semJugement);
+  //Laisse la place à un autre paysan
+
+  pthread_exit(0);
+}
+```
+
+## Fonctions par acteurs
 
 ### jugement() (Le Roi)
 ```C
