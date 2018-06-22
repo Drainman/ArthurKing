@@ -1,12 +1,25 @@
 # Arthur King Simulation (A C project)
 # *Develop by Hagbuck & Drainman*
 
+# Utilisation
+
+## Lancement du programme
+* OS Support : Linux
+* Entrer "make" dans le répertoire du projet.
+* Lancer "./arthurKing"
+
+## Modifier les paramèters
+Editez arthurKing.h :
+* Définir le nombre de paysans : #define NB_PAYSANS [VOTRE NOMBRE]
+* Définir le timer max des chevaliers (retour de quete) : #define MAX_TIMER_KNIGHTS [VALEUR TIMER]
+* Définir le timer max des paysans : #define MAX_TIMER_FARMER [VALEUR TIMER]
+
 # Algorythm
 
 ## PTHREADS
-[1] - Roi - king()
-[11] - Chevaliers - chevalier()
-[NB_PAYSANS] - Paysans - paysans()
+* [1] - Roi - king()
+* [11] - Chevaliers - chevalier()
+* [NB_PAYSANS] - Paysans - paysans()
 
 ## Actions descriptions
 
