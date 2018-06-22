@@ -5,19 +5,26 @@
 /*                              DATE : Juin 2018                              */
 /******************************************************************************/
 
-
+/*************************/
 /********** LIB **********/
+/*************************/
 #include "arthurKing.h"
 
-
+/*************************/
 /********** CONST *********/
+/*************************/
 sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal,semJugement,semTag;
-int nb_chevaliersDispo ,nb_paysansEnJugement =0,timerGraal,roiJuge = 0;
+//Détails plus bas
+int timerGraal,roiJuge = 0;
+//Timer commun pour la recherche du Graal entre les chevaliers & le Roi.
 char tag;
+//Utilisé pour prévenir les chevalier qu'il est tant de partir chercher le Graal. (='G' sinon '' )
 int status;
-pthread_mutex_t semJugement2;
+//status de retour de threads
 
+/*************************/
 /********** MAIN *********/
+/*************************/
 int main(int argc,char ** argv)
 {
   /******** VARIABLES ********/
@@ -25,50 +32,55 @@ int main(int argc,char ** argv)
   int nb_paysans = NB_PAYSANS;
 
   /******** THREADS *********/
-  //KING
+  //THREAD KING
   pthread_t pking;
 
-  //KNIGHTS
+  //THREADS KNIGHTS
   pthread_t pChevalier[11];
   int id_chevalier[11];
 
-  //FARMERS
+  //THREADS FARMERS
   pthread_t pPaysans[NB_PAYSANS];
   int id_paysans[NB_PAYSANS];
 
   /******** SEMAPHORES *********/
-  sem_init(&semChevaliersDispo, 0, 11); //11 chevaliers
-  sem_init(&semPaysansEnJugement, 0,3); //Porte chateau
-  sem_init(&semJugement,0,1); //Attente dans la salle de réception
+  sem_init(&semChevaliersDispo, 0, 11);
+  //Pour les 11 Chevaliers. Consomme après avoir fait leur quete.
+  sem_init(&semPaysansEnJugement, 0,3);
+  //Pour empecher les paysans d'entrer à plus de 3 dans le chateau.
+  sem_init(&semJugement,0,1);
+  //Monopolisé par le Roi jusqu'a son jugement pour laisser le relais aux trois paysans.
   sem_init(&semTimerGraal, 0, 1);
-  sem_init(&semTag,0,12); // 11 chevalier + le roi
+  //Semaphore d'accès au timer (sécurité supplémentaire seul le roi la Consomme)
+  sem_init(&semTag,0,1);
+  //Semaphore d'accés au Tag (sécurité supplémentaire seul le roi la Consomme)
 
   /******** CODE ********/
   printf("[INFO] - Lancement du programme.\n");
 
+  //Création du Roi
   pthread_create (&pking, NULL, (void *) &king, NULL);
 
-  //PTHREAD KNIGHTS
-  /*
+  //Création des chevaliers
   for(int i=0;i<11;i++)
   {
      id_chevalier[i] = i;
      pthread_create (&pChevalier[i], NULL, (void *) &chevalier, (void *) &id_chevalier[i]);
   }
-  */
 
-  //PTHREAD FARMERS
+  //Création des paysans
   for(int i=0;i<nb_paysans;i++)
   {
     id_paysans[i] = i;
     pthread_create (&pPaysans[i], NULL, (void *) &paysans, (void *) &id_paysans[i]);
   }
 
-  //SYNCHRO KNIGHTS & FARMERS
+  //Synchronisation des touts les threads
   pthread_join(pking, NULL);
   for(int i=0;i<11;i++){pthread_join(pChevalier[i], NULL);}
   for(int i=0;i<11;i++){pthread_join(pPaysans[i], NULL);}
 
+  /********** END *********/
   printf("[INFO] - Fin du programme.\n");
   return 0;
 }
@@ -128,22 +140,27 @@ void paysans(void *ptr)
   sem_wait(&semPaysansEnJugement); //y a de la place
 
   //Attend que le roi ouvre la porte
-  pthread_mutex_lock(&semJugement2);
+  //pthread_mutex_lock(&semJugement2);
+  printf("[PAYSANS %d] - Attends dans la salle.\n",x );
+
+  sem_wait(&semJugement);
 
   printf("[PAYSANS %d] - Jugé.\n",x);
 
-  pthread_mutex_unlock(&semJugement2);
+  sem_post(&semJugement);
+  //pthread_mutex_unlock(&semJugement2);
 
   //Laisse la place à un autre paysant
-  sem_post(&semPaysansEnJugement);
+  //sem_post(&semPaysansEnJugement);
+  pthread_exit(0);
 }
 
 void king(void * ptr)
 {
   //Bloque l'accés au palais
   printf("[KING] - I'm alive ! \n");
-  pthread_mutex_lock(&semJugement2);
-
+  //pthread_mutex_lock(&semJugement2);
+  sem_wait(&semJugement);
   while(1)
   {
     //Get rest
@@ -175,7 +192,7 @@ void king(void * ptr)
 
       printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
       //3 FARMERS HERE
-      if(placePaysans <= 0 && nb_paysansEnJugement == 3)
+      if(placePaysans <= 0 )
       {
         jugement();
       }
@@ -188,15 +205,21 @@ void king(void * ptr)
 void invoqueMerlin()
 {
   printf("[MERLIN] - Merlin ! I need some help !\n");
-  //Attendre la fin du timer protégé en commun avec les chevaliers
+  //Attends la fin du timer partagé avec les chevalier
   sleep( timerGraal);
 }
+
 
 void jugement()
 {
   printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 
-  pthread_mutex_unlock(&semJugement2);
-  usleep(400);
-  pthread_mutex_lock(&semJugement2);
+  //Libère la semaphore de un pour indiquer aux paysans qu'ils sont jugés.
+  sem_post(&semJugement);
+  usleep(200);
+  sem_wait(&semJugement);
+
+  //On libère les trois paysans
+  for(int i=0;i<3;i++){sem_post(&semPaysansEnJugement);}
+
 }
