@@ -37,13 +37,13 @@
 
 ## Lancement du programme
 * OS Support : Linux
-* Entrer "make" dans le répertoire du projet.
-* Lancer "./arthurKing"
+* Entrez "make" dans le répertoire du projet.
+* Lancez "./arthurKing"
 
-## Modifier les paramèters
-Editez arthurKing.h :
+## Modifier le paramètrage
+Editez "arthurKing.h" :
 * Définir le nombre de paysans : #define NB_PAYSANS [VOTRE NOMBRE]
-* Définir le timer max des chevaliers (retour de quete) : #define MAX_TIMER_KNIGHTS [VALEUR TIMER]
+* Définir le timer max des chevaliers (retour de quête) : #define MAX_TIMER_KNIGHTS [VALEUR TIMER]
 * Définir le timer max des paysans : #define MAX_TIMER_FARMER [VALEUR TIMER]
 
 # Algorithme
@@ -57,23 +57,23 @@ Editez arthurKing.h :
 
 ### Le Roi
 Boucle de manière infini. A chaque itération :
-* Regarde si les chevaliers sont tous dispos.
-* Si oui =>  leur ordonne de partir en quete & appelle merlin.
-* Sinon => Si 3 paysans attende de se faire juger, les juge.
+* Regarde si les chevaliers sont tous disponibles.
+* Si oui =>  Leur ordonne de partir en quête avec lui et appelle Merlin.
+* Sinon => Si 3 paysans attendent de se faire juger, les juge.
 
 ### Les Chevaliers
 Boucle de manière infini. A chaque itération :
-* Part en quete pendant un timer alétoire
-* A la fin prévient le roi de sa disponibilité.
-* Attends que ce dernier et tous les autres soient disponibles avant de partir à la recherche Graal avec tout le monde.
-* Repart en quete.
+* Part en quête pendant un timer de durée alétoire
+* A la fin prévient le Roi de sa disponibilité.
+* Attend que ce dernier et tous les autres soient disponibles avant de partir à la recherche Graal avec tout le monde.
+* Repart en quête.
 
 ### Les Paysans
 Une seul itération :
-* Fait sa vie jusqu'a avoir une requete à faire au Roi (timer aléatoire).
+* Fait sa vie jusqu'à avoir une requête à faire au Roi (timer de durée aléatoire).
 * Se rend à la cours.
 * Tente de rentrer dans le palais.
-* Attends que 3 autres paysans soient présents + la présence du roi
+* Attends que 3 autres paysans soient présents ainsi que la présence du Roi.
 * Se fait juger.
 
 ## Semaphores
@@ -85,13 +85,13 @@ Une seul itération :
 * Lecteur : Le Roi.
 
 ### semPaysansEnJugement
-* Description : Indique le nombre de paysans prets a etre jugé.
+* Description : Indique le nombre de paysans prêts à être jugé.
 * Place : 3
 * Consomateur : Les Paysans.
 * Lecteur : Le Roi.
 
 ### semJugement
-* Description : Sert au jugement des paysans. Le Roi prend la ressource au début du programme. Lorsque 3 paysans attendent de se faire juger et que le Roi n'est pas en quete, il libère la ressource alors consommé à tour de role par les paysans. Puis le Roi reprend la ressource pour empecher que d'autres paysans se fasse juger tant qu'il ne sont pas trois.
+* Description : Sert au jugement des paysans. Le Roi prend la ressource au début du programme. Lorsque trois paysans attendent de se faire juger et que le Roi n'est pas à la recherche du Graal, il libère la ressource qui est alors consommé à tour de rôle par les paysans. Puis le Roi reprend la ressource pour empêcher que d'autres paysans ne se fassent juger tant qu'ils ne sont pas trois.
 * Place : 1
 * Consomateur : Le Roi et les Paysans.
 
