@@ -3,73 +3,100 @@
 
 # Algorythm
 
-## Process
-TheKing : Process boucle infini.
-11 Threads représenatant les chevaliers.
-N Threads représenatant les paysans. (N valeurs aléatoires ou donner en paramètre)
+## PTHREADS
+[1] - Roi - king()
+[11] - Chevaliers - chevalier()
+[NB_PAYSANS] - Paysans - paysans()
 
 ## Actions descriptions
 
-### TheKing
-Boucle infini (while 1).
-* If(nb_chevaliersDispo == 11) --> appelMerlin()
-* Else if(nb_paysans_en_attente_de_jugement == 3 ) --> rend_jugement() --> = kill process paysans.
-* Else --> CONTINUE
+### Le Roi
+Boucle de manière infini. A chaque itération :
+* Regarde si les chevaliers sont tous dispos.
+* Si oui =>  leur ordonne de partir en quete & appelle merlin.
+* Sinon => Si 3 paysans attende de se faire juger, les juge.
 
-### Chevaliers
-Boucle infi (while 1).
-*  If(nb_chevaliersDispo == 11) --> chercheGraal()
-*  Else (en_quete) --> Timer random pendant lequel il font leur quete --> MainProcess
-A la fin du timer se rend disponible pour le roi --> rendreCompte()
+### Les Chevaliers
+Boucle de manière infini. A chaque itération :
+* Part en quete pendant un timer alétoire
+* A la fin prévient le roi de sa disponibilité.
+* Attends que ce dernier et tous les autres soient disponibles avant de partir à la recherche Graal avec tout le monde.
+* Repart en quete.
 
-### Paysans
-Timer random pour attendre qu'il se présente à la cours
-* Si quand se rend à la cours, il y a déja 3 paysans --> bloqué par accés ressources.
+### Les Paysans
+Une seul itération :
+* Fait sa vie jusqu'a avoir une requete à faire au Roi (timer aléatoire).
+* Se rend à la cours.
+* Tente de rentrer dans le palais.
+* Attends que 3 autres paysans soient présents + la présence du roi
+* Se fait juger.
 
-## Variables protégées
+## Semaphores
 
-### nb_chevaliersDispo
-Description : Représente le nombre de chevalier disponible pour partir en quete.
-* Contrainte : <= 11
-* A chaque appel de rendreCompte() ++
-* A l'appel de appelMerlin() = 0
+### semChevaliersDispo
+* Description : Indique le nombre de chevaliers disponibles pour partir à la recherche du Graal.
+* Place : 11
+* Consomateur : Les Chevaliers.
+* Lecteur : Le Roi.
 
-### nb_paysansEnJugement
-Description : Représente le nombre de paysans pret à etre juger.
-* Contrainte : <= 3
-* A chaque fin de timer des paysans et < 3 --> ++
-* Reset à l'appel de rend_jugement() --> =0
+### semPaysansEnJugement
+* Description : Indique le nombre de paysans prets a etre jugé.
+* Place : 3
+* Consomateur : Les Paysans.
+* Lecteur : Le Roi.
 
-### timerGraal
-Desription : Le temps pendant lequel le roi et ses 11 chevlaiers partent. (random)
+### semJugement
+* Description : Sert au jugement des paysans. Le Roi prend la ressource au début du programme. Lorsque 3 paysans attendent de se faire juger et que le Roi n'est pas en quete, il libère la ressource alors consommé à tour de role par les paysans. Puis le Roi reprend la ressource pour empecher que d'autres paysans se fasse juger tant qu'il ne sont pas trois.
+* Place : 1
+* Consomateur : Le Roi et les Paysans.
 
-## Fonction
+## Fonctions par acteurs.
 
-### rend_jugement() (TheKing)
-* Appelé quand nb_paysansEnJugement==3 & si roi présent
-* Kill process des 3 paysans
-* PRINT : 'And my jugement is .... [actionRandom] ! Justice done for [PID] '
-* RESET $nb_paysansEnJugement
+### jugement() (Le Roi)
+```C
+void jugement()
+{
+  printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 
-### appelMerlin() (TheKing)
-* Appelé par le Roi quand nb_chevaliersDispo == 11
-* PRINT : 'Merlin, please. Help Me.'
-* RESET $nb_chevaliersDispo
-* timer commun aux chevaliers
+  //Libère la semaphore de un pour indiquer aux paysans qu'ils sont jugés.
+  sem_post(&semJugement);
+  usleep(200);
+  sem_wait(&semJugement);
 
-### chercheGraal() (Chevaliers)
-* Appelé par les chevaliers quand nb_chevaliersDispo == 11
-* PRINT : 'But.. Where is this fuc**** book ! ' + timer commun avec le roi
-* A la fin de cette fonction le chevalier doit repartir en quete. (semaphore de son etat MAJ par le roi et visible dans le boucle infini)
+  //On libère les trois paysans aprés le jugement
+  for(int i=0;i<3;i++){sem_post(&semPaysansEnJugement);}
+}
+```
+
+### invoqueMerlin() (Le Roi)
+```C
+void invoqueMerlin()
+{
+  //Appelle Merlin
+  printf("[MERLIN] - Merlin ! I need some help !\n");
+  //Attends la fin du timer partagé avec les chevalier
+  sleep( timerGraal);
+}
+```
+
+### chercherGraal() (Les Chevaliers)
+```C
+void chercherGraal(void * ptr)
+{
+  //Préviens de son départ en quete
+  printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
+  //Timer de quete commun avec le Roi
+  sleep( timerGraal);
+}
+```
 
 ### rendreComptee() (Chevaliers)
-* Appelé par les chevaliers quand leur timer de quete est fini.
-* PRINT : 'My king I've complete my quest.'
-* INCREMENT : $nb_chevaliersDispo
+```C
+void rendreCompte(void *ptr)
+{
+  //Se rend disponible pour le roi --> Consomme le sémaphore
+  sem_wait(&semChevaliersDispo);
 
-### mainProcess des paysans
-* Timer random avant de se rendre à la cours
-* PRINT (arrive à la cours) : "I have a request !"
-* INCREMENT : $nb_paysansEnJugement
-* WAIT : JUGEMENT
-* WHEN JUGER -> PRINT : "King juge me !"
+  printf("[CHEVALIER %d] - My king I've complete my quest.\n",x );
+}
+```

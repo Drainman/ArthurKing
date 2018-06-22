@@ -89,7 +89,7 @@ int main(int argc,char ** argv)
 /**
 * PTHREAD CHEVALIER
 * NOMBRE : 11
-* Lance un timer, à la attends les autres et le roi pour partir chercher le Graal.
+* Lance un timer, à la fin : attend les autres et le roi pour partir chercher le Graal.
 */
 void chevalier(void *ptr)
 {
@@ -158,7 +158,6 @@ void chercherGraal(void * ptr)
 /************************* ROI **************************/
 /********************************************************/
 
-
 /**
 * PTHREAD KING
 * NOMBRE : 1
@@ -211,7 +210,7 @@ void king(void * ptr)
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
       printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
 
-      //Si 3 paysants attendent
+      //Si 3 paysans attendent
       if(placePaysans <= 0 ){jugement();}
 
     }
@@ -237,13 +236,13 @@ void invoqueMerlin()
 
 /**
 * LIE A PTHREAD KING
-* Juge trois paysants qui attendent.
+* Juge trois paysans qui attendent.
 */
 void jugement()
 {
   printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 
-  //Libère la semaphore de un pour indiquer aux paysants qu'ils sont jugés.
+  //Libère la semaphore de un pour indiquer aux paysans qu'ils sont jugés.
   sem_post(&semJugement);
   usleep(200);
   sem_wait(&semJugement);
@@ -254,10 +253,8 @@ void jugement()
 
 
 /********************************************************/
-/************************* ROI **************************/
+/*********************** PAYSANS ************************/
 /********************************************************/
-
-
 
 /**
 * PTHREAD KING
@@ -267,7 +264,7 @@ void jugement()
 */
 void paysans(void *ptr)
 {
-  //ID PAYSANTS
+  //ID PAYSANS
   int x;
   x = *((int *) ptr);
 
@@ -285,8 +282,7 @@ void paysans(void *ptr)
   sem_wait(&semJugement);
   printf("[PAYSANS %d] - Jugé.\n",x);
   sem_post(&semJugement);
-  //Laisse la place à un autre paysant
-
+  //Laisse la place à un autre paysan
 
   pthread_exit(0);
 }
