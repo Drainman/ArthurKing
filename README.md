@@ -9,7 +9,7 @@
    * [Utilisation](#utilisation)
       * [Lancement du programme](#lancement-du-programme)
       * [Modifier les paramèters](#modifier-les-paramèters)
-   * [Algorythm](#algorythm)
+   * [Algorithme](#algorithme)
       * [PTHREADS](#pthreads)
       * [Actions descriptions](#actions-descriptions)
          * [Le Roi](#le-roi)
@@ -46,14 +46,14 @@ Editez arthurKing.h :
 * Définir le timer max des chevaliers (retour de quete) : #define MAX_TIMER_KNIGHTS [VALEUR TIMER]
 * Définir le timer max des paysans : #define MAX_TIMER_FARMER [VALEUR TIMER]
 
-# Algorythm
+# Algorithme
 
 ## PTHREADS
 * [1] - Roi - king()
 * [11] - Chevaliers - chevalier()
 * [NB_PAYSANS] - Paysans - paysans()
 
-## Actions descriptions
+## Acteurs
 
 ### Le Roi
 Boucle de manière infini. A chaque itération :
