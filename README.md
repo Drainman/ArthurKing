@@ -1,6 +1,37 @@
 # Arthur King Simulation (A C project)
 # *Develop by Hagbuck & Drainman*
 
+
+# Sommaire
+<!--ts-->
+   * [Arthur King Simulation (A C project)](#arthur-king-simulation-a-c-project)
+   * [Utilisation](#utilisation)
+      * [Lancement du programme](#lancement-du-programme)
+      * [Modifier les paramèters](#modifier-les-paramèters)
+   * [Algorythm](#algorythm)
+      * [PTHREADS](#pthreads)
+      * [Actions descriptions](#actions-descriptions)
+         * [Le Roi](#le-roi)
+         * [Les Chevaliers](#les-chevaliers)
+         * [Les Paysans](#les-paysans)
+      * [Semaphores](#semaphores)
+         * [semChevaliersDispo](#semchevaliersdispo)
+         * [semPaysansEnJugement](#sempaysansenjugement)
+         * [semJugement](#semjugement)
+         * [Thread](#thread)
+         * [Le Roi](#le-roi-1)
+         * [Les Chevaliers](#les-chevaliers-1)
+         * [Les Paysans](#les-paysans-1)
+      * [Fonctions par acteurs](#fonctions-par-acteurs)
+         * [jugement() (Le Roi)](#jugement-le-roi)
+         * [invoqueMerlin() (Le Roi)](#invoquemerlin-le-roi)
+         * [chercherGraal() (Les Chevaliers)](#cherchergraal-les-chevaliers)
+         * [rendreComptee() (Chevaliers)](#rendrecomptee-chevaliers)
+
+<!-- Added by: kurai, at: 2018-06-22T22:06+02:00 -->
+
+<!--te-->
+
 # Utilisation
 
 ## Lancement du programme
