@@ -149,7 +149,7 @@ void chercherGraal(void * ptr)
   x = *((int *) ptr);
 
   //Préviens de son départ en quete
-  printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
+  printf("[CHEVALIER %d] - ALRIGHT ! LET'S GO TO FIND THIS RELIC !\n",x);
   //Timer de quete commun avec le Roi
   sleep( timerGraal);
 }
