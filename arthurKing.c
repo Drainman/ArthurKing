@@ -13,7 +13,7 @@
 /*************************/
 /********** CONST *********/
 /*************************/
-sem_t semChevaliersDispo,semPaysansEnJugement,semTimerGraal,semJugement,semTag;
+sem_t semChevaliersDispo,semPaysansEnJugement,semJugement;
 //Détails plus bas
 int timerGraal,roiJuge = 0;
 //Timer commun pour la recherche du Graal entre les chevaliers & le Roi.
@@ -50,10 +50,6 @@ int main(int argc,char ** argv)
   //Pour empecher les paysans d'entrer à plus de 3 dans le chateau.
   sem_init(&semJugement,0,1);
   //Monopolisé par le Roi jusqu'a son jugement pour laisser le relais aux trois paysans.
-  sem_init(&semTimerGraal, 0, 1);
-  //Semaphore d'accès au timer (sécurité supplémentaire seul le roi la Consomme)
-  sem_init(&semTag,0,1);
-  //Semaphore d'accés au Tag (sécurité supplémentaire seul le roi la Consomme)
 
   /******** CODE ********/
   printf("[INFO] - Lancement du programme.\n");
@@ -86,140 +82,211 @@ int main(int argc,char ** argv)
 }
 
 
+/********************************************************/
+/********************** CHEVALIER ***********************/
+/********************************************************/
+
+/**
+* PTHREAD CHEVALIER
+* NOMBRE : 11
+* Lance un timer, à la attends les autres et le roi pour partir chercher le Graal.
+*/
 void chevalier(void *ptr)
 {
-    //ID
+    //ID CHEVALIER
     int x;
     x = *((int *) ptr);
 
-    //TIMER
-    sleep( rand() % MAX_TIMER_KNIGHTS);
+    while(1)
+    {
+      //TIMER
+      sleep( rand() % MAX_TIMER_KNIGHTS);
 
-    //EVENT
-    sem_wait(&semChevaliersDispo);
-    rendreCompte(ptr);
+      //EVENT
+      rendreCompte(ptr);
 
-    //WAIT FOR KING
-    while(tag != 'G'){}
+      //WAIT FOR KING
+      while(tag != 'G'){}
 
-    chercherGraal(ptr);
-    sem_post(&semChevaliersDispo);
-    printf("[CHEVALIER %d] - Come back for my quest.\n",x);
+      //Cherche le Graal
+      chercherGraal(ptr);
+
+      //Libère le sémaphore --> Se rend indisponible et repart en quete
+      sem_post(&semChevaliersDispo);
+      printf("[CHEVALIER %d] - Come back for my quest.\n",x);
+      //while --> Reparte en quete
+    }
+
+    //Fin Thread King
+    pthread_exit(0);
 }
 
-void chercherGraal(void * ptr)
-{
-  //ID
-  int x;
-  x = *((int *) ptr);
-
-  //AFTER WAIT
-  printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
-  //Wait timer
-  sleep( timerGraal);
-}
-
+/**
+* LIE A PTHREAD CHEVALIER
+* Indique que le chevalier à fini sa quete.
+*/
 void rendreCompte(void *ptr)
 {
+  //ID CHEVALIER
   int x;
   x = *((int *) ptr);
+
+  //Se rend disponible pour le roi --> Consomme le sémaphore
+  sem_wait(&semChevaliersDispo);
+
   printf("[CHEVALIER %d] - My king I've complete my quest.\n",x );
 }
 
-void paysans(void *ptr)
+
+/**
+* LIE A PTHREAD CHEVALIER
+* Le chevalier part en quete $timerGraal secondes
+*/
+void chercherGraal(void * ptr)
 {
-  //ID
+  //ID CHEVALIER
   int x;
   x = *((int *) ptr);
 
-  //TIMER
-  sleep( rand() % MAX_TIMER_FARMER) + 1;
-  printf("[PAYSANS %d] - Se rend à la cours.\n",x );
-
-  //SEMAPHORE
-  sem_wait(&semPaysansEnJugement); //y a de la place
-
-  //Attend que le roi ouvre la porte
-  //pthread_mutex_lock(&semJugement2);
-  printf("[PAYSANS %d] - Attends dans la salle.\n",x );
-
-  sem_wait(&semJugement);
-
-  printf("[PAYSANS %d] - Jugé.\n",x);
-
-  sem_post(&semJugement);
-  //pthread_mutex_unlock(&semJugement2);
-
-  //Laisse la place à un autre paysant
-  //sem_post(&semPaysansEnJugement);
-  pthread_exit(0);
+  //Préviens de son départ en quete
+  printf("[CHEVALIER %d] - ALRIGHT LET'S GO TO FIND THIS BOOK !\n",x);
+  //Timer de quete commun avec le Roi
+  sleep( timerGraal);
 }
 
+/********************************************************/
+/************************* ROI **************************/
+/********************************************************/
+
+
+/**
+* PTHREAD KING
+* NOMBRE : 1
+* Regarde si les chevaliers sont tous dispos.
+* => Si oui, leur ordonne de partir en quete & appelle merlin
+* => Sinon
+*     => Si 3 paysans attende de se faire juger, les juge.
+*/
 void king(void * ptr)
 {
-  //Bloque l'accés au palais
-  printf("[KING] - I'm alive ! \n");
-  //pthread_mutex_lock(&semJugement2);
+  printf("[KING] - Welcome in my Kingdom. \n");
+
+  //Prend la ressource d'accès à la salle de jugement (1 place)
   sem_wait(&semJugement);
+
   while(1)
   {
-    //Get rest
+    //Prend du repos
     sleep(2);
 
-    //Test si tout les chevaliers sont dispos
+    //Regarde la disponibilité des chevaliers
     int placeChevalier;
     sem_getvalue(&semChevaliersDispo,&placeChevalier);
     printf("[INFO/KING] - WAITING KNIGHTS -> %d \n",placeChevalier);
 
+    //Tout les chevaliers sont disponibles
     if(placeChevalier <= 0)
     {
-      sem_wait(&semTimerGraal);
+      //Défini un timer commun pour lui et le chevalier (= temps de recherche du Graal)
       timerGraal =    rand() % 25  ;
-      sem_post(&semTimerGraal);
-      sem_wait(&semTag);
+
+      //Ordonne au chevalier de partir
       tag = 'G';
-      sem_post(&semTag);
+
+      //Invoque Merlin
       invoqueMerlin();
+
+      //Retour au royaume
       printf("[KING] - I'm back to my kingdom !\n");
+
+      //Ne donne plus d'ordre
       tag = ' ';
     }
 
+    //Chevaliers indisponibles
     else
     {
-      //nb paysans dispo
+      //Récupère le nombre de paysans en attente d'etre juge
       int placePaysans;
       sem_getvalue(&semPaysansEnJugement,&placePaysans);
-
       printf("[WARNING] - PLACE SEM FARMERS -> %d \n",placePaysans);
-      //3 FARMERS HERE
-      if(placePaysans <= 0 )
-      {
-        jugement();
-      }
+
+      //Si 3 paysants attendent
+      if(placePaysans <= 0 ){jugement();}
 
     }
 
+    //Reboucle
   }
+
+  //Fin Thread King
+  pthread_exit(0);
 }
 
+/**
+* LIE A PTHREAD KING
+* Invoque Merlin pour l'aider dans sa quete de recherche du Graal
+*/
 void invoqueMerlin()
 {
+  //Appelle Merlin
   printf("[MERLIN] - Merlin ! I need some help !\n");
   //Attends la fin du timer partagé avec les chevalier
   sleep( timerGraal);
 }
 
-
+/**
+* LIE A PTHREAD KING
+* Juge trois paysants qui attendent.
+*/
 void jugement()
 {
   printf("[KING] - AND THIS IS MY JUGEMENT !!!\n");
 
-  //Libère la semaphore de un pour indiquer aux paysans qu'ils sont jugés.
+  //Libère la semaphore de un pour indiquer aux paysants qu'ils sont jugés.
   sem_post(&semJugement);
   usleep(200);
   sem_wait(&semJugement);
 
-  //On libère les trois paysans
+  //On libère les trois paysans aprés le jugement
   for(int i=0;i<3;i++){sem_post(&semPaysansEnJugement);}
+}
 
+
+/********************************************************/
+/************************* ROI **************************/
+/********************************************************/
+
+
+
+/**
+* PTHREAD KING
+* NOMBRE : NB_PAYSANS
+* A partir d'un certain temps se rend à la cours. Attends que 3 autres soit présents
+* ainsi que la présence du roi avant de se faire juger.
+*/
+void paysans(void *ptr)
+{
+  //ID PAYSANTS
+  int x;
+  x = *((int *) ptr);
+
+  //N'a pas de reqete à faire au roi avant la fin du timer
+  sleep( rand() % MAX_TIMER_FARMER) + 1;
+  printf("[PAYSANS %d] - Se rend à la cours.\n",x );
+
+  //Demande à voir le roi -> Attends de pouvoir rentrer dans le palais
+  sem_wait(&semPaysansEnJugement);
+
+  //Est dans le palais et attends dans la salle d'attente
+  printf("[PAYSANS %d] - Attends dans la salle.\n",x );
+
+  //Attend que le roi l'accueil et le juge
+  sem_wait(&semJugement);
+  printf("[PAYSANS %d] - Jugé.\n",x);
+  sem_post(&semJugement);
+  //Laisse la place à un autre paysant
+
+
+  pthread_exit(0);
 }
