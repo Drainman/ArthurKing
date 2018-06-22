@@ -3,6 +3,7 @@
 
 
 # Sommaire
+
 <!--ts-->
    * [Arthur King Simulation (A C project)](#arthur-king-simulation-a-c-project)
    * [Utilisation](#utilisation)
@@ -18,7 +19,7 @@
          * [semChevaliersDispo](#semchevaliersdispo)
          * [semPaysansEnJugement](#sempaysansenjugement)
          * [semJugement](#semjugement)
-         * [Thread](#thread)
+      * [Thread](#thread)
          * [Le Roi](#le-roi-1)
          * [Les Chevaliers](#les-chevaliers-1)
          * [Les Paysans](#les-paysans-1)
@@ -28,7 +29,7 @@
          * [chercherGraal() (Les Chevaliers)](#cherchergraal-les-chevaliers)
          * [rendreComptee() (Chevaliers)](#rendrecomptee-chevaliers)
 
-<!-- Added by: kurai, at: 2018-06-22T22:06+02:00 -->
+<!-- Added by: kurai, at: 2018-06-22T22:11+02:00 -->
 
 <!--te-->
 
@@ -94,7 +95,7 @@ Une seul itération :
 * Place : 1
 * Consomateur : Le Roi et les Paysans.
 
-### Thread
+## Thread
 
 ### Le Roi
 ```C
