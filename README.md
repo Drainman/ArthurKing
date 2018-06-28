@@ -1,17 +1,40 @@
 # Arthur King Simulation (A C project)
 # *Develop by Hagbuck & Drainman*
 
+# Contexte
+
+**Dans un royaume fort fort lointain…**
+
+Le Roi Arthur, nouveau roi jeune et intrépide, est à la recherche d’aventure et en quête du Saint Graal.
+Accompagné de ces loyaux chevaliers de la table ronde, aucune épreuve ne saurait l’arrêter.
+Ces vaillants paladins de la justice divine sont chargés d’assurer la paix dans le royaume. Pour y
+parvenir, ces derniers partent vaillamment accomplir les quêtes de la couronne. Affrontant de
+terrifiants dragons, de maléfiques créatures sorties d’outre-tombe, leur absence peut s’avérer longue
+pour notre jeune roi.
+
+Pendant que ces braves soldats légendaires sont absents, notre roi doit s’occuper de ces tâches
+royales. La principale besogne d’Arthur est de s’occuper du jugement de ces subalternes. En effet tous
+les paysans du royaume viennent chaque jour afin de rencontrer notre bon roi. Bien que généreux et
+bienveillant, Arthur ne reçoit que 3 requêtes à la fois. Il serait dommage de bâcler cette mission
+essentielle pour la stabilité du royaume.
+
+« *Messire ! Messire ! Vos valeureux guerriers sont tous revenue de leurs aventures ! Il est l’heure !* »
+s’écrit Merlin. Au retour des 11 chevaliers, le Roi Arthur ne peut s’empêcher d’enfourner son épée et
+son armure, et partir à la recherche du Ô saint Graal. Notre roi appelle Merlin, et convoque ces 11
+chevaliers de la table ronde. « *Au diable ces pauvres gueux, ils attendront notre retour !* » s’écrie le roi
+Arthur avant de partir fièrement, la tête haute vers sa destinée …
 
 # Sommaire
 
 <!--ts-->
    * [Arthur King Simulation (A C project)](#arthur-king-simulation-a-c-project)
+   * [Contexte](#contexte)
    * [Utilisation](#utilisation)
       * [Lancement du programme](#lancement-du-programme)
-      * [Modifier les paramèters](#modifier-les-paramèters)
+      * [Modifier le paramètrage](#modifier-le-paramètrage)
    * [Algorithme](#algorithme)
       * [PTHREADS](#pthreads)
-      * [Actions descriptions](#actions-descriptions)
+      * [Acteurs](#acteurs)
          * [Le Roi](#le-roi)
          * [Les Chevaliers](#les-chevaliers)
          * [Les Paysans](#les-paysans)
